@@ -3719,7 +3719,7 @@ async function runTests() {
     },
     'sync_accounts settings-update mode rejects an operator, which names a party rather than an attribute'
   );
-  await testSchemaRejection(
+  await testSchemaValidation(
     '/schemas/account/sync-accounts-request.json',
     {
       idempotency_key: 'sync-accounts-billing-update-0001',
@@ -3728,7 +3728,7 @@ async function runTests() {
         billing: 'agent'
       }]
     },
-    'sync_accounts settings-update mode rejects a billing change'
+    'sync_accounts settings-update mode accepts a billing change, an account attribute'
   );
   await testSchemaValidation(
     '/schemas/account/sync-accounts-request.json',

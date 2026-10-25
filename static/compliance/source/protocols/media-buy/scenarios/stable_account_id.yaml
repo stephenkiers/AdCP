@@ -34,7 +34,7 @@ narrative: |
 
   The buyer provisions a fresh natural key, qualified by a per-run
   operator_unit so no earlier run or fixture can have created it. It captures
-  the returned account_id and checks that the id and the complete natural key
+  the returned account_id and checks that the id and the natural key
   resolve the same account on list_accounts. An account-scoped task that names
   the account only by account_id must succeed instead of returning
   ACCOUNT_NOT_FOUND.
@@ -162,7 +162,7 @@ phases:
             description: "The account_id resolves the per-run operator unit"
 
       - id: list_by_natural_key
-        title: "Resolve the account by its complete natural key"
+        title: "Resolve the account by its natural key"
         task: list_accounts
         schema_ref: "account/list-accounts-request.json"
         response_schema_ref: "account/list-accounts-response.json"
@@ -182,7 +182,7 @@ phases:
           - check: array_length
             path: "accounts"
             value: 1
-            description: "The complete natural key returns exactly the provisioned account"
+            description: "The natural key returns exactly the provisioned account"
           - check: field_equals_context
             path: "accounts[0].account_id"
             context_key: "stable_account_id"

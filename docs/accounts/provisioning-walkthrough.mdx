@@ -376,7 +376,7 @@ An optional `invoice_recipient` can override the account's default billing entit
 - **The setup link is absent or expired.** Fetch the current account through authenticated `list_accounts`. The lifecycle webhook never carries `setup.url`.
 - **No durable notification arrives.** Poll `list_accounts`. The one-shot task callback covers only the original provisioning result and is not a lifecycle subscription.
 - **The repair read is not active.** Honor the returned state. `pending_approval`, `payment_required`, `suspended`, `rejected`, and `closed` do not permit a new media buy.
-- **Billing must change after provisioning.** Do not send `billing` in settings-update mode; billing is fixed at provisioning. Follow the seller's commercial process or establish the appropriate new account relationship.
+- **Billing must change after provisioning.** Send `billing` in a settings-update entry that names the account by `account_id`. A seller that cannot change the invoiced party returns `UNSUPPORTED_FEATURE`; then follow the seller's commercial process.
 - **A per-buy invoice override is rejected.** If the seller does not authorize `invoice_recipient`, or governance denies the override, the seller rejects the media buy. The buyer may use the already-authorized account default after obtaining any required fresh governance approval, or escalate to a human; it must not silently reroute the invoice.
 
 ## Related reference

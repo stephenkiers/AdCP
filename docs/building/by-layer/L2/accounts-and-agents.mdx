@@ -500,7 +500,7 @@ On individual media buys, an `invoice_recipient` can override the account defaul
 **Workflow:**
 
 1. Agent calls `sync_accounts` with one or more declarations
-2. Seller provisions or links accounts for each, responds with status:
+2. Seller opens an account for each entry, or returns the account its account scope maps the entry to, and responds with status:
    - `active` — ready to use
    - `pending_approval` — seller reviewing (human may need to visit `setup.url`)
    - `rejected` — seller declined the request
@@ -509,7 +509,7 @@ On individual media buys, an `invoice_recipient` can override the account defaul
    - **Account-id namespaces** (`require_operator_auth: true`): pass `{ "account_id": "acc_acme_001" }` (discover via `list_accounts` for upstream-managed namespaces, or receive out-of-band for seller-defined namespaces)
    - **Sandbox (buyer-declared)**: pass the `account_id` of the sandbox account opened via `sync_accounts` with `sandbox: true`
    - **Sandbox (account-id namespace)**: pass `{ "account_id": "test_acc_001" }` (pre-existing test account, discovered via `list_accounts` or supplied out-of-band)
-4. To change an account attribute, send a `sync_accounts` settings-update entry with the `account_id`. For a new brand, operator, or billing model, open another account with `sync_accounts`
+4. To change an account attribute, such as countries or the billing model, send a `sync_accounts` settings-update entry with the `account_id`. For a new brand or operator, open another account with `sync_accounts`
 5. After a cold start, call `list_accounts` to recover account IDs when the seller exposes the recommended read surface
 
 The agent may be directly responsible for billing when `billing` is `"agent"`. When `billing` is `"operator"` or `"advertiser"`, the agent facilitates but is not the invoiced party. The seller may require human approval before activating accounts.
@@ -518,7 +518,7 @@ The agent may be directly responsible for billing when `billing` is `"agent"`. W
 
 The seller-assigned `account_id` identifies the account. The natural key, `brand` (`domain` plus optional `brand_id`) and `operator`, names the account's parties. `brand.countries`, `operator_unit`, `currency`, `timezone`, and `sandbox` are account attributes. The buyer sets them when the account opens and can update them by `account_id`; they never change the account's identity. Countries never target delivery. `operator_unit` identifies the operator's own business unit, agency seat, or buying-platform account. `currency` applies only when the seller's advertiser object is locked to one currency. `timezone` applies only when the seller asks the buyer to select an account timezone. Omit either attribute when its capability mode does not apply.
 
-As a reference, the natural key resolves only when exactly one of the caller's accounts matches it; the attributes narrow the match. Zero matches return `ACCOUNT_NOT_FOUND` and several return `ACCOUNT_AMBIGUOUS`. Because an account's identity never changes, its `account_id` keeps naming it.
+As a reference, the natural key resolves only when exactly one of the caller's accounts matches it. Each supplied attribute must equal the account's value: `countries` compares as a set, and `operator_unit` compares by `id`. An omitted attribute does not filter, except `sandbox`, which defaults to `false`. Zero matches return `ACCOUNT_NOT_FOUND` and several return `ACCOUNT_AMBIGUOUS`. Because an account's identity never changes, its `account_id` keeps naming it.
 
 This separates two account namespaces that must not be conflated: `operator_unit.id` is assigned by the buyer-side operator, while `account_id` is assigned by the AdCP seller/storefront. Both may be opaque values, but they identify different objects and are not interchangeable.
 
@@ -674,7 +674,7 @@ When an agent declares `(brand: {domain: "acme-corp.com"}, operator: "pinnacle-m
 
 `sync_accounts` is the buyer-side interface to the seller's record system. The seller may:
 
-- Link the entry to an existing account under its account scope and return `status: "active"`
+- Map the entry to an account it already holds under its account scope, and return that account with `action: "unchanged"`
 - Create a new record and return it immediately (`status: "active"`)
 - Create a placeholder pending human review (`status: "pending_approval"`)
 - Decline the request entirely (`status: "rejected"`)
