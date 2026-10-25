@@ -123,9 +123,12 @@ const ACTIVE_SURFACE_VERSION = semver.prerelease(PACKAGE_VERSION)
 // media-buy context measures 473,582 bytes / 462.48 KiB; bound it at 463 KiB.
 // Experimental purchase rights add rights-scope and two right-use values to the
 // purchase graph reached through buy_products (+941 bytes measured, 473,582 ->
-// 474,523 bytes / 463.4 KiB), bounded at 464 KiB.
+// 474,523 bytes / 463.4 KiB), bounded at 464 KiB. Experimental live creative
+// updates (#8404) add staged_update and live_updates readback to the
+// sync_creatives and list_creatives graphs (475,145 bytes / 464.01 KiB
+// measured), bounded at 465 KiB.
 const MODEL_CONTEXT_BUDGET_KIB = {
-  'media-buy': 464,
+  'media-buy': 465,
   creative: 410,
 };
 // Keep parity compilation materially tighter than the 4 MiB protocol schema
