@@ -3,7 +3,7 @@ version: "1.0.0"
 introduced_in: "3.3"
 title: "Seller-assigned account_id is a durable AccountRef for a buyer-declared account"
 category: media_buy_seller
-summary: "Provisions a fresh buyer-declared account, then verifies the returned account_id resolves the same account as its natural key, is accepted as an AccountRef on an account-scoped task, and survives a re-sync unchanged."
+summary: "Provisions a fresh buyer-declared account, then verifies the returned account_id resolves the same account as its natural key and is accepted as an AccountRef on an account-scoped task."
 track: media_buy
 
 # Gate: sellers that declare account.stable_account_id: true for buyer-declared
@@ -37,8 +37,11 @@ narrative: |
   the returned account_id and checks that the id and the complete natural key
   resolve the same account on list_accounts. An account-scoped task that names
   the account only by account_id must succeed instead of returning
-  ACCOUNT_NOT_FOUND. Re-syncing the same natural key returns the same
-  account_id.
+  ACCOUNT_NOT_FOUND.
+
+  The stable_account_id flag is deprecated in 3.3: every seller returns and
+  accepts account_id. A provisioning entry opens an account, so this scenario
+  does not re-send it; a retry uses the same idempotency_key.
 
 agent:
   interaction_model: media_buy_seller
@@ -210,33 +213,3 @@ phases:
           - check: field_present
             path: "media_buys"
             description: "The seller answered for the account_id instead of rejecting it"
-
-  - id: account_id_survives_resync
-    title: "Re-sync keeps the account_id"
-    depends_on: [resolve_by_account_id]
-    steps:
-      - id: resync_natural_key
-        title: "Re-sync the same natural key"
-        task: sync_accounts
-        schema_ref: "account/sync-accounts-request.json"
-        response_schema_ref: "account/sync-accounts-response.json"
-        doc_ref: "/accounts/tasks/sync_accounts"
-        stateful: true
-        sample_request:
-          accounts:
-            - brand:
-                domain: "acmeoutdoor.example"
-              operator: "pinnacle-agency.example"
-              operator_unit:
-                id: "$context.stable_account_operator_unit_id"
-                name: "Stable account_id test"
-              billing: "$context.stable_account_billing"
-              sandbox: true
-          idempotency_key: "$generate:uuid_v4#stable_account_id_resync"
-        validations:
-          - check: response_schema
-            description: "Re-sync response matches the canonical schema"
-          - check: field_equals_context
-            path: "accounts[0].account_id"
-            context_key: "stable_account_id"
-            description: "Re-syncing the natural key returns the unchanged account_id"
