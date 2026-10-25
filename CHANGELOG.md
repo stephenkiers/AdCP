@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.8
+
+### Patch Changes
+
+- 42285ba: Align the broadcast TV storyboard's seeded account and account references on sandbox mode, so the buyer resolves the account seeded by the controller.
+- 42285ba: Scope the final creative lifecycle webhook assertion to the forced rejection and require transition.to to be rejected, so earlier lifecycle events cannot satisfy it.
+
 ## 3.2.7
 
 ### Patch Changes
