@@ -1,5 +1,5 @@
 id: media_buy_seller/account_timezone_buyer_selected
-version: "1.0.0"
+version: "1.0.1"
 title: "Buyer-selected account timezone resolution"
 category: media_buy_seller
 summary: "Verifies advertised timezone selection, cold-start lookup through list_accounts, and a separate account when a buyer selects another timezone."

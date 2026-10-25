@@ -1,5 +1,5 @@
 id: media_buy_seller/stable_account_id
-version: "1.0.0"
+version: "1.0.1"
 introduced_in: "3.3"
 title: "Seller-assigned account_id is a durable AccountRef for a buyer-declared account"
 category: media_buy_seller
