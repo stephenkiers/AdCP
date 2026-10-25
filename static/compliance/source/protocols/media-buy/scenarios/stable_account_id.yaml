@@ -92,7 +92,7 @@ phases:
             description: "Seller advertises at least one billing model to provision with"
 
       - id: provision_account
-        title: "Provision the per-run natural key"
+        title: "Open an account for this run"
         task: sync_accounts
         schema_ref: "account/sync-accounts-request.json"
         response_schema_ref: "account/sync-accounts-response.json"
@@ -118,7 +118,7 @@ phases:
           - check: field_value
             path: "accounts[0].action"
             value: "created"
-            description: "The per-run natural key creates a fresh account"
+            description: "Provisioning opens a fresh account for this run"
           - check: field_present
             path: "accounts[0].account_id"
             description: "A non-failed provisioning result carries account_id"

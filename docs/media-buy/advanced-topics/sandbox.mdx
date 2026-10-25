@@ -222,12 +222,12 @@ You can combine them — `dry_run: true` on a sandbox account previews the sync 
 The `X-Dry-Run`, `X-Test-Session-ID`, and `X-Mock-Time` HTTP headers are **deprecated**. Sandbox mode replaces them as a protocol-level parameter.
 
 - **Sellers MUST NOT** alter behavior based on these headers. Sandbox mode is determined solely by the account reference. Sellers SHOULD ignore the headers entirely and MAY log a deprecation warning to help buyers identify stale integrations.
-- **Buyers MUST NOT** rely on these headers to prevent production side effects. Use a natural-key account reference with `sandbox: true`, or a preverified sandbox `account_id`; an account ID cannot carry a sandbox flag or convert a production account.
+- **Buyers MUST NOT** rely on these headers to prevent production side effects. Reference the sandbox account by its `account_id`, returned by `sync_accounts` or `list_accounts` or preverified out of band. During 3.x, a natural-key reference with `sandbox: true` also works. An account ID cannot carry a sandbox flag or convert a production account.
 </Warning>
 
 ## Seller implementation
 
-When a request references a sandbox account (either via `sandbox: true` in the natural key or via a sandbox `account_id`), agents MUST NOT persist production state or cause real-world side effects:
+A request references a sandbox account by its `account_id`, or during 3.x by a natural-key reference with `sandbox: true`. When it does, agents MUST NOT persist production state or cause real-world side effects:
 
 - **MUST NOT** make real ad platform API calls (no real orders, line items, etc.)
 - **MUST NOT** charge real money or create real billing records

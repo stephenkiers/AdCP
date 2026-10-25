@@ -13,9 +13,9 @@ AdCP distinguishes four entities in every billable operation:
 | **Operator** | Who operates on the brand's behalf? | Domain (e.g., `pinnacle-media.com`) |
 | **Agent** | What software is placing the buy? | Authenticated session |
 
-**Brand** — The advertiser whose products or services are promoted. Identified by a `brand` reference (`domain` + optional `brand_id` and ISO country `countries[]`), resolved via `/.well-known/brand.json`. Countries distinguish commercial advertiser identities without becoming delivery targeting.
+**Brand** — The advertiser whose products or services are promoted. Identified by `domain` plus optional `brand_id`, resolved via `/.well-known/brand.json`. The reference's ISO country `countries[]` is an account attribute, not identity, and never becomes delivery targeting.
 
-**Account** — A billing relationship between a buyer and seller. Determines rate card, payment terms, credit limit, operational timezone, and who receives invoices. Every billable operation requires an account reference — a seller/storefront-assigned `account_id` when the seller or upstream platform owns the canonical account namespace, or an advertiser natural key (`brand`, `operator`, optional `operator_unit`, fixed `currency`, buyer-selected `timezone`, `sandbox`) for buyer-declared accounts.
+**Account** — A billing relationship between a buyer and seller. Determines rate card, payment terms, credit limit, operational timezone, and who receives invoices. Every billable operation requires an account reference: the seller-assigned `account_id` in both account models. A buyer-declared account opens with `brand` and `operator` through `sync_accounts`, which returns its `account_id`.
 
 **Operator** — The entity driving buys — an agency trading desk, the brand's internal team, or another entity acting on behalf of the advertiser. Identified by domain and verifiable via [authorized operators](#authorized-operators) in `brand.json`.
 
@@ -562,7 +562,7 @@ Three identities show up on every request. Keep them apart:
 |---|---|---|
 | **Calling agent** | The transport: a verified request signature, or a credential the seller issued at onboarding | `https://agent.orbit-buying.example/mcp` |
 | **Agent's operator** | The brand.json that lists the agent in `agents[]`, meaning whoever runs the agent | `orbit-buying.example` |
-| **Account operator** | The request payload: `accounts[].operator` on `sync_accounts`, `account.operator` on later calls | `pinnacle-media.com` |
+| **Account operator** | The request payload: `accounts[].operator` when `sync_accounts` opens the account, and an attribute of the account after that | `pinnacle-media.com` |
 
 ### 1. Onboard the agent
 
@@ -596,7 +596,7 @@ The authenticated caller is the agent. The operator belongs to the account the a
 }
 ```
 
-The seller takes `operator` from each entry, and later from `account.operator`. It doesn't substitute a value from the transport, such as the agent URL, the agent's brand.json domain, or an `operator` field an SDK attaches to the authenticated principal. If it did, both accounts would be attributed to `orbit-buying.example` instead of their agencies, and invoices would go to the wrong party. Two agencies buying the same brand through this agent would also share one account and see each other's buys and reporting.
+The seller takes `operator` from each entry when the account opens, and it stays an attribute of the account after that. The seller doesn't substitute a value from the transport, such as the agent URL, the agent's brand.json domain, or an `operator` field an SDK attaches to the authenticated principal. If it did, both accounts would be attributed to `orbit-buying.example` instead of their agencies, and invoices would go to the wrong party. Two agencies buying the same brand through this agent would also share one account and see each other's buys and reporting.
 
 Authentication still limits what the payload can reach. On calls after provisioning, each account the agent references has to be in that agent's authorized set ([Agent and account isolation](/docs/building/by-layer/L1/security#agent-and-account-isolation)). This matches [Tenant resolution](/docs/building/by-layer/L2/authentication#tenant-resolution): the authenticated principal decides which accounts are reachable, and the account reference only selects one. For each `sync_accounts` entry the seller also runs the [brand-operator check](#authorized-operators) and checks the agent's commercial state against the requested `billing`.
 
@@ -674,7 +674,7 @@ When an agent declares `(brand: {domain: "acme-corp.com"}, operator: "pinnacle-m
 
 `sync_accounts` is the buyer-side interface to the seller's record system. The seller may:
 
-- Map the entry to an account it already holds under its account scope, and return that account with `action: "unchanged"`
+- Map the entry to an account it already holds under its account scope, and return that `account_id` if the entry's values match the account's
 - Create a new record and return it immediately (`status: "active"`)
 - Create a placeholder pending human review (`status: "pending_approval"`)
 - Decline the request entirely (`status: "rejected"`)

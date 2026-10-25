@@ -102,7 +102,7 @@ phases:
           - check: field_value
             path: "accounts[0].action"
             value: "created"
-            description: "The per-run natural key creates a fresh account identity"
+            description: "Provisioning opens a fresh account for this run"
           - check: field_equals_context
             path: "accounts[0].timezone"
             context_key: "account_timezone"
@@ -114,7 +114,7 @@ phases:
           - check: field_equals_context
             path: "accounts[0].operator_unit.id"
             context_key: "timezone_test_operator_unit_id"
-            description: "Provisioning preserves the per-run natural-key qualifier"
+            description: "Provisioning echoes the per-run operator_unit attribute"
 
   - id: natural_key_roundtrip
     title: "Round-trip the timezone-bearing natural AccountRef"
@@ -204,7 +204,7 @@ phases:
             description: "A second selectable timezone is advertised"
 
       - id: provision_second_timezone
-        title: "Provision the second timezone-bearing natural key"
+        title: "Open a second account with the second timezone"
         task: sync_accounts
         schema_ref: "account/sync-accounts-request.json"
         response_schema_ref: "account/sync-accounts-response.json"
@@ -228,7 +228,7 @@ phases:
           - check: field_value
             path: "accounts[0].action"
             value: "created"
-            description: "A different timezone creates a separate natural-key account"
+            description: "A second entry with a different timezone opens a separate account"
           - check: field_equals_context
             path: "accounts[0].timezone"
             context_key: "second_account_timezone"

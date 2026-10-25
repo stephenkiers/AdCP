@@ -1280,8 +1280,7 @@
           "deprecated": true,
           "x-deprecated-in": "3.3.0",
           "type": "boolean",
-          "description": "Deprecated in 3.3 and planned for removal in 4.0. Every seller MUST return account_id from sync_accounts, accept it on every account-scoped task, and never change it, so the guarantee this flag declared always holds. Sellers SHOULD send true while the field exists. Buyers MUST NOT require it before sending account_id.",
-          "default": false
+          "description": "Deprecated in 3.3 and planned for removal in 4.0. Every seller MUST return account_id from sync_accounts, accept it on every account-scoped task, and never change it, so the guarantee this flag declared always holds. Sellers SHOULD send true while the field exists. Buyers MUST NOT require it before sending account_id."
         },
         "supported_billing": {
           "type": "array",
