@@ -1,5 +1,5 @@
 {
-  "description": "Deterministic resolution vectors for price_adjustments on binding fixed-price pricing options. One running total: starting at fixed_price, each firing row applies to it in declared order (a rate row adds or subtracts round half away from zero of running x rate, an amount row adds or subtracts its amount), so a 10% fee then a 10% fee is x1.21. Dutch index cards are expressed as fee or discount rates (factor 1.25 is a fee rate of 0.25, factor 0.80 a discount rate of 0.20). Selection rows fire at most once per dimension (the first valid matching row in declared order); always rows fire independently; valid_from/valid_until bound a row to a half-open window evaluated at the purchase start_time, and a flight that crosses a window boundary of a row that would otherwise apply is rejected. Price precision is the greatest of the currency minor-unit exponent, 4 for cpm/vcpm/cpc/cpcv/cpv/cpp, and the fewest decimals that exactly represent fixed_price and each amount, by numeric value; the resolved price is the exact running total and never below zero. Arithmetic MUST be exact decimal or integer. Each fired row is recorded in price_breakdown in declared order: a rate below 1 as its rate, otherwise (a fee rate of 1 or more, or an amount row) as its currency amount. A table is bound to its quote: it applies only to the account it was returned for and until the quote expires. The accepted terms retain the table so a change the agreement already permits is priced from it; the table grants no change right.",
+  "description": "Deterministic resolution vectors for price_adjustments on binding fixed-price pricing options. One running total: starting at fixed_price, each firing row applies to it in declared order (a rate row adds or subtracts round half away from zero of running x rate, an amount row adds or subtracts its amount), so a 10% fee then a 10% fee is x1.21. Dutch index cards are expressed as fee or discount rates (factor 1.25 is a fee rate of 0.25, factor 0.80 a discount rate of 0.20). Selection rows fire at most once per dimension (the first valid matching row in declared order); always rows fire independently; valid_from/valid_until bound a row to a half-open window evaluated at the purchase start_time, and a flight that crosses a window boundary of a row that would otherwise apply is rejected. Price precision is the greatest of the currency minor-unit exponent, 4 for cpm/vcpm/cpc/cpcv/cpv/cpp, and the fewest decimals that exactly represent fixed_price and each amount, by numeric value; the resolved price is the exact running total and never below zero. Arithmetic MUST be exact decimal or integer. Each fired row is recorded in price_breakdown in declared order: a rate below 1 as its rate, otherwise (a fee rate of 1 or more, or an amount row) as its currency amount. A table is bound to its quote: it applies only to the account it was returned for and until the quote expires. A changed table is a new pricing_option_id, so the accepted pricing_option_id identifies exactly one immutable table, which both parties retain from discovery; a change the agreement already permits is priced from that table, never a later one, and the table grants no change right.",
   "currency_minor_unit_exponent": {
     "USD": 2,
     "JPY": 0,
@@ -1488,8 +1488,7 @@
             "amount": 1.0
           }
         ]
-      },
-      "applies_to": "both"
+      }
     },
     {
       "id": "commission_kind_not_selection_dependent",
@@ -1506,8 +1505,7 @@
             "rate": 0.1
           }
         ]
-      },
-      "applies_to": "both"
+      }
     },
     {
       "id": "property_list_dimension_not_priceable_in_v1",
@@ -1520,36 +1518,17 @@
             "rate": 0.1
           }
         ]
-      },
-      "applies_to": "both"
+      }
     },
     {
       "id": "adjustments_require_fixed_price",
       "mutate": {
         "fixed_price": null,
         "floor_price": 5.0
-      },
-      "applies_to": "both"
-    },
-    {
-      "id": "price_adjustments_on_cpa_not_defined",
-      "applies_to": "canonical",
-      "mutate": {
-        "pricing_model": "cpa",
-        "event_type": "purchase"
-      }
-    },
-    {
-      "id": "base_fixed_price_without_table",
-      "applies_to": "canonical",
-      "mutate": {
-        "price_adjustments": null,
-        "base_fixed_price": 20.0
       }
     },
     {
       "id": "index_kind_is_not_defined",
-      "applies_to": "both",
       "mutate": {
         "price_adjustments": [
           {
@@ -1563,7 +1542,6 @@
     },
     {
       "id": "validity_window_must_be_a_date_time",
-      "applies_to": "both",
       "mutate": {
         "price_adjustments": [
           {
@@ -1578,7 +1556,6 @@
     },
     {
       "id": "factor_is_not_a_row_field",
-      "applies_to": "both",
       "mutate": {
         "price_adjustments": [
           {
@@ -1592,7 +1569,6 @@
     },
     {
       "id": "rate_must_be_positive",
-      "applies_to": "both",
       "mutate": {
         "price_adjustments": [
           {
@@ -1606,7 +1582,6 @@
     },
     {
       "id": "collection_list_dimension_not_priceable_in_v1",
-      "applies_to": "both",
       "mutate": {
         "price_adjustments": [
           {
@@ -1659,7 +1634,7 @@
   ],
   "accepted_terms_cases": [
     {
-      "id": "permitted_change_is_priced_from_the_retained_table_without_a_requote",
+      "id": "permitted_change_is_priced_from_the_accepted_options_table_without_a_requote",
       "option": "cpm_rate_card",
       "accepted_selection": {
         "format_option_refs": [
@@ -1713,6 +1688,44 @@
       "change_permitted_by_change_terms": false,
       "expect": {
         "outcome": "ACTION_NOT_ALLOWED"
+      }
+    },
+    {
+      "id": "later_table_does_not_reprice_the_accepted_option",
+      "option": "cpm_rate_card",
+      "later_option": "cpm_placement_first",
+      "accepted_selection": {
+        "format_option_refs": [
+          {
+            "scope": "product",
+            "format_option_id": "video_30s"
+          }
+        ],
+        "placement_selection": {
+          "mode": "default"
+        }
+      },
+      "requested_selection": {
+        "format_option_refs": [
+          {
+            "scope": "product",
+            "format_option_id": "video_30s"
+          }
+        ],
+        "placement_selection": {
+          "mode": "selected",
+          "placement_refs": [
+            {
+              "publisher_domain": "streamhaus.example",
+              "placement_id": "premium_home"
+            }
+          ]
+        }
+      },
+      "change_permitted_by_change_terms": true,
+      "expect": {
+        "outcome": "priced",
+        "fixed_price": 25.3
       }
     }
   ]

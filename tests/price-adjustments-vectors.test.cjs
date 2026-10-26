@@ -4,19 +4,20 @@
  *
  * Layers:
  *   1. Every declared option validates against pricing-option.json (product
- *      offer) and canonical-pricing-option.json (accepted snapshot).
+ *      offer). The accepted snapshot is the same option without the table
+ *      (canonical-pricing-option.json is closed, so it carries no table).
  *   2. A reference resolver implementing the normative sequential rule (one
  *      running total, each firing row applied in declared order) reproduces
  *      every resolved price, ordered application, and fired-row amount in exact
  *      integer arithmetic at the option's price precision.
  *   3. The resolved snapshot (resolved fixed_price, price_breakdown of fired
- *      rows, retained table) validates against canonical-pricing-option.json and
- *      folds back to fixed_price per the price-breakdown invariant.
+ *      rows, no embedded table) validates against canonical-pricing-option.json
+ *      and folds back to fixed_price per the price-breakdown invariant.
  *   4. Negative schema cases are rejected and the changed-table identity rule
  *      holds.
  *   5. A table is bound to its quote (account and expiry), and the accepted
- *      terms price a change the agreement already permits from the retained
- *      table without granting any change right.
+ *      terms price a change the agreement already permits from the table of the
+ *      accepted pricing_option_id, without granting any change right.
  *
  * SDKs consume the same vector file to check their own resolvers.
  */
@@ -216,9 +217,9 @@ function resolve(option, selection) {
 // The accepted snapshot records each fired row as its own price_breakdown entry
 // after the declared adjustments.
 function resolvedSnapshot(option, result) {
-  const snapshot = { ...option, fixed_price: result.fixed_price };
+  const { price_adjustments: _table, ...rest } = option;
+  const snapshot = { ...rest, fixed_price: result.fixed_price };
   if (!result.entries.length) return snapshot;
-  snapshot.base_fixed_price = option.fixed_price;
   const declared = option.price_breakdown;
   snapshot.price_breakdown = {
     list_price: declared ? declared.list_price : option.fixed_price,
@@ -241,14 +242,14 @@ function foldBreakdown(breakdown, precision) {
 
 // --- Tests -------------------------------------------------------------------
 
-test('every declared option validates as a product pricing option and a canonical snapshot option', async () => {
+test('every declared option validates as a product pricing option; the closed canonical snapshot carries no table', async () => {
   const [validateOffer, validateCanonical] = await Promise.all([
     compile('/schemas/core/pricing-option.json'),
     compile('/schemas/core/canonical-pricing-option.json'),
   ]);
   for (const [name, option] of Object.entries(vectors.options)) {
     assert.ok(validateOffer(option), `${name} as offer: ${JSON.stringify(validateOffer.errors)}`);
-    assert.ok(validateCanonical(option), `${name} as canonical: ${JSON.stringify(validateCanonical.errors)}`);
+    assert.equal(validateCanonical(option), false, `${name}: canonical snapshot must not embed the table`);
   }
 });
 
@@ -271,9 +272,13 @@ test('resolution cases reproduce the resolved price and ordered application', as
     if (snapshot.price_breakdown) {
       const folded = foldBreakdown(snapshot.price_breakdown, result.precision);
       assert.equal(toNumber(folded, result.precision), snapshot.fixed_price, `${c.id}: breakdown invariant`);
-      assert.equal(snapshot.base_fixed_price, option.fixed_price, `${c.id}: base_fixed_price`);
+      assert.equal(
+        snapshot.price_breakdown.list_price,
+        option.price_breakdown ? option.price_breakdown.list_price : option.fixed_price,
+        `${c.id}: list_price is the base the verifier re-resolves from`,
+      );
     } else {
-      assert.equal(snapshot.base_fixed_price, undefined, `${c.id}: no base_fixed_price when no row fired`);
+      assert.equal(snapshot.fixed_price, option.fixed_price, `${c.id}: no row fired, base rate`);
     }
   }
 });
@@ -317,20 +322,14 @@ test('a changed table requires a distinct pricing_option_id', () => {
 });
 
 test('schema negative cases are rejected', async () => {
-  const [validateOffer, validateCanonical] = await Promise.all([
-    compile('/schemas/core/pricing-option.json'),
-    compile('/schemas/core/canonical-pricing-option.json'),
-  ]);
+  const validateOffer = await compile('/schemas/core/pricing-option.json');
   for (const c of vectors.schema_negative_cases) {
     const option = { ...vectors.options.cpm_rate_card };
     for (const [key, value] of Object.entries(c.mutate)) {
       if (value === null) delete option[key];
       else option[key] = value;
     }
-    if (c.applies_to !== 'canonical') {
-      assert.equal(validateOffer(option), false, `${c.id} should be invalid as an offer`);
-    }
-    assert.equal(validateCanonical(option), false, `${c.id} should be invalid as canonical`);
+    assert.equal(validateOffer(option), false, `${c.id} should be invalid as an offer`);
   }
 });
 
@@ -346,17 +345,23 @@ test('a table applies only to the quoted account and expires with the quote', ()
   }
 });
 
-// The accepted terms retain the table, so a change the agreement already permits
-// is priced from it without a re-quote. The table itself grants no change right:
-// permission comes only from change_terms[].
+// A changed table is a new pricing_option_id, so the accepted pricing_option_id
+// identifies exactly one immutable table. A change the agreement already permits
+// is priced from that table, never from a later one, without a re-quote. The
+// table itself grants no change right: permission comes only from change_terms[].
 function priceAcceptedChange(option, c) {
   if (!c.change_permitted_by_change_terms) return { outcome: 'ACTION_NOT_ALLOWED' };
   return { outcome: 'priced', fixed_price: resolve(option, c.requested_selection).fixed_price };
 }
 
-test('accepted terms price a permitted change from the retained table and grant no change right', () => {
+test('accepted terms price a permitted change from the accepted option\'s table and grant no change right', () => {
   for (const c of vectors.accepted_terms_cases) {
     assert.deepEqual(priceAcceptedChange(vectors.options[c.option], c), c.expect, c.id);
+    if (c.later_option) {
+      const later = vectors.options[c.later_option];
+      assert.notEqual(later.pricing_option_id, vectors.options[c.option].pricing_option_id, c.id);
+      assert.notEqual(resolve(later, c.requested_selection).fixed_price, c.expect.fixed_price, `${c.id}: later table prices differently`);
+    }
   }
 });
 

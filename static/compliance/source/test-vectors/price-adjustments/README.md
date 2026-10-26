@@ -29,18 +29,22 @@ is an equally supported path, and its price applies only to what was quoted.
 7. A buyer-supplied `pricing` that differs from the resolved result is rejected
    with `INVALID_REQUEST` carrying the resolved price and breakdown; a changed
    table requires a new `pricing_option_id`.
-8. An accepted snapshot carries `base_fixed_price`, the resolved `fixed_price`,
-   a `price_breakdown` of declared adjustments plus each fired row in declared
-   order (a rate below 1 as its rate, otherwise as its currency amount), and the
-   retained table, so a verifier can re-resolve it.
+8. An accepted snapshot carries the resolved `fixed_price` and a
+   `price_breakdown` of the declared adjustments plus each fired row in declared
+   order (a rate below 1 as its rate, otherwise as its currency amount), both
+   existing fields, so a verifier can re-resolve it. The table is not embedded
+   in the snapshot (the canonical schemas are closed; embedding is a 4.0 item,
+   #8501).
 9. **Quotes stay bound to their terms** (`quote_binding_cases`). A table applies
    only to the account it was returned for and expires with the quote: the
    proposal or offer `expires_at`, or the discovery response's validity.
-10. **Accepted terms** (`accepted_terms_cases`). The accepted terms retain the
-    table under `terms_digest`, so a change the agreement already permits is
-    priced from it without a re-quote. The table grants no change right: a
-    change not permitted by `change_terms[]` is `ACTION_NOT_ALLOWED` whatever
-    the table says.
+10. **Accepted terms** (`accepted_terms_cases`). A changed table is a new
+    `pricing_option_id`, so the accepted `pricing_option_id` (covered by
+    `terms_digest`) identifies exactly one immutable table, which both parties
+    retain from discovery. A change the agreement already permits is priced from
+    that table, never from a later table, without a re-quote. The table grants no
+    change right: a change not permitted by `change_terms[]` is
+    `ACTION_NOT_ALLOWED` whatever the table says.
 
 The `dutch_tv_*` cases are a fictional linear TV rate card: a net base price
 multiplied by month, market, spot-length and target-audience indices (written as
