@@ -123,9 +123,21 @@ function formatKey(ref) {
   return ref.scope === 'publisher' ? `p:${ref.publisher_domain}:${ref.format_option_id}` : `l:${ref.format_option_id}`;
 }
 
+// A seller agent is identified by its URL, compared under the AdCP URL
+// canonicalization rules (docs/reference/url-canonicalization), not byte equality:
+// scheme and host lowercased, default port and userinfo stripped, empty path "/",
+// dot segments removed, fragment dropped.
+function canonicalAgentUrl(value) {
+  const url = new URL(value);
+  url.username = '';
+  url.password = '';
+  url.hash = '';
+  return url.href;
+}
+
 function placementKey(ref) {
   return ref.kind === 'seller_inline'
-    ? `s:${JSON.stringify(ref.seller_agent)}:${ref.placement_id}`
+    ? `s:${canonicalAgentUrl(ref.seller_agent.agent_url)}:${ref.placement_id}`
     : `p:${ref.publisher_domain}:${ref.placement_id}`;
 }
 

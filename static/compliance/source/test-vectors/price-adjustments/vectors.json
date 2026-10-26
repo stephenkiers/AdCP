@@ -467,6 +467,27 @@
           "rate": 0.1
         }
       ]
+    },
+    "cpm_seller_inline_placement": {
+      "pricing_option_id": "cpm_usd_seller_inline",
+      "pricing_model": "cpm",
+      "currency": "USD",
+      "fixed_price": 20.0,
+      "price_adjustments": [
+        {
+          "dimension": "placement_selection",
+          "placement_ref": {
+            "kind": "seller_inline",
+            "seller_agent": {
+              "agent_url": "https://Agent.Example:443/"
+            },
+            "placement_id": "premium_home"
+          },
+          "kind": "fee",
+          "name": "premium_home_placement",
+          "rate": 0.15
+        }
+      ]
     }
   },
   "resolution_cases": [
@@ -929,6 +950,62 @@
             "amount": 0.5
           }
         ]
+      }
+    },
+    {
+      "id": "seller_inline_agent_url_matches_under_url_canonicalization",
+      "option": "cpm_seller_inline_placement",
+      "selection": {
+        "format_option_refs": [],
+        "placement_selection": {
+          "mode": "selected",
+          "placement_refs": [
+            {
+              "kind": "seller_inline",
+              "seller_agent": {
+                "agent_url": "https://agent.example/"
+              },
+              "placement_id": "premium_home"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "fixed_price": 23.0,
+        "applied": [
+          "premium_home_placement"
+        ],
+        "breakdown": [
+          {
+            "kind": "fee",
+            "name": "premium_home_placement",
+            "rate": 0.15
+          }
+        ]
+      }
+    },
+    {
+      "id": "seller_inline_different_agent_does_not_match",
+      "option": "cpm_seller_inline_placement",
+      "selection": {
+        "format_option_refs": [],
+        "placement_selection": {
+          "mode": "selected",
+          "placement_refs": [
+            {
+              "kind": "seller_inline",
+              "seller_agent": {
+                "agent_url": "https://other.example/"
+              },
+              "placement_id": "premium_home"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "fixed_price": 20.0,
+        "applied": [],
+        "breakdown": []
       }
     },
     {
