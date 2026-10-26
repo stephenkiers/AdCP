@@ -298,7 +298,7 @@
                   "x-entity": "media_buy_change_term",
                   "x-status": "experimental",
                   "x-added-in": "3.3.0",
-                  "description": "The seller-held change_terms[] entry that authorized this change. When present, actor is seller_system or seller_operator and reason is required. The account change feed record for the same change carries the same term_id."
+                  "description": "The seller-held change_terms[] entry that authorized this change. When present, origin.kind is seller_system or seller_operator and reason is required; actor stays the seller-defined identity. The account change feed record for the same change carries the same term_id."
                 },
                 "reason": {
                   "type": "string",
@@ -316,8 +316,8 @@
                 {
                   "if": { "required": ["term_id"] },
                   "then": {
-                    "required": ["actor", "reason"],
-                    "properties": { "actor": { "enum": ["seller_system", "seller_operator"] } }
+                    "required": ["origin", "reason"],
+                    "properties": { "origin": { "required": ["kind"], "properties": { "kind": { "enum": ["seller_system", "seller_operator"] } } } }
                   }
                 }
               ],

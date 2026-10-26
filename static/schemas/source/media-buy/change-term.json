@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "/schemas/media-buy/change-term.json",
   "title": "Media Buy Change Term",
-  "description": "A proposal-bound change right. With holder absent or buyer it is a buyer change right: it binds to the resulting media buy and account, not personally to the caller, and may be exercised by any caller admitted by both seller account authorization and applicable signed governance delegation. With holder seller (experimental) it is a bounded change the seller may apply to one purchase without an offer; the seller states it and the buyer binds it through accept_proposal. It is never a buyer right or an available_actions[] projection. Sellers MUST NOT emit holder, purchase_index or a seller-held term below AdCP 3.3.",
+  "description": "A proposal-bound change right. Buyer-held when holder is absent or buyer: it binds to the media buy and account, and any caller admitted by seller account authorization and signed governance delegation may exercise it. With holder seller (experimental) it is a bounded change the seller may apply to one purchase without an offer, bound by the buyer through accept_proposal, never a buyer right. Sellers MUST NOT emit holder, purchase_index or a seller-held term below AdCP 3.3.",
   "x-adcp-validation": {
     "verifier_constraints": {
       "allowed_statuses": "Every value is a non-terminal MediaBuy status. The current buy projection omits the action outside these statuses without extinguishing the negotiated right.",
@@ -37,7 +37,7 @@
       "default": "buyer",
       "x-status": "experimental",
       "x-added-in": "3.3.0",
-      "description": "Experimental (media_buy.seller_adjustment_allowances). Absent means buyer. A seller-held term requires purchase_index and constraints, takes only decrease_budget, update_impression_goal, update_flight_dates or update_targeting, service_mode seller_managed, and no processing_sla."
+      "description": "Experimental (media_buy.seller_adjustment_allowances). Absent means buyer. A seller-held term requires purchase_index and constraints, takes decrease_budget, update_impression_goal, update_flight_dates or update_targeting, service_mode seller_managed, and no processing_sla."
     },
     "purchase_index": {
       "type": "integer",

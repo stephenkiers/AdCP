@@ -178,7 +178,7 @@
       "x-entity": "media_buy_change_term",
       "x-status": "experimental",
       "x-added-in": "3.3.0",
-      "description": "Experimental (media_buy.seller_adjustment_allowances). The seller-held change_terms[] entry that authorized this change when the seller applied it unilaterally. origin.kind is seller_system, or seller_operator when a person applied it, and reason is present. The media buy history entry for the same revision carries the same term_id."
+      "description": "Experimental (media_buy.seller_adjustment_allowances). The seller-held change_terms[] entry that authorized this change when the seller applied it unilaterally. When present, origin.kind is seller_system, or seller_operator when a person applied it, and reason is required. The media buy history entry for the same revision carries the same term_id."
     },
     "summary": {
       "type": "string",
@@ -210,6 +210,13 @@
       },
       "else": {
         "not": {"required": ["idempotency_key"]}
+      }
+    },
+    {
+      "if": {"required": ["term_id"]},
+      "then": {
+        "required": ["reason"],
+        "properties": {"origin": {"properties": {"kind": {"enum": ["seller_system", "seller_operator"]}}}}
       }
     }
   ],

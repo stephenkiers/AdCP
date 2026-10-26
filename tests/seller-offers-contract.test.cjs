@@ -675,7 +675,8 @@ describe("seller offers (media_buy.seller_offers)", () => {
         revision: 6,
         timestamp: "2026-11-12T09:30:00Z",
         action: "updated_budget",
-        actor: "seller_system",
+        actor: "ops@seller.example",
+        origin: { kind: "seller_system" },
         term_id: "release_budget_1",
         reason: "forecast_shortfall",
         summary: "Released 400 USD that the forecast says cannot be delivered",
@@ -687,17 +688,23 @@ describe("seller offers (media_buy.seller_offers)", () => {
       const noReason = { ...entry };
       delete noReason.reason;
       assert.equal(validateMediaBuys(response(buy({}, [noReason]))), false);
+      const noOrigin = { ...entry };
+      delete noOrigin.origin;
+      assert.equal(validateMediaBuys(response(buy({}, [noOrigin]))), false);
+      assert.ok(
+        validateMediaBuys(response(buy({}, [{ ...entry, origin: { kind: "seller_operator" } }]))),
+        "actor stays a free-form identity; origin.kind carries the classification"
+      );
+      for (const kind of ["adcp", "connected_platform", "unknown"]) {
+        assert.equal(validateMediaBuys(response(buy({}, [{ ...entry, origin: { kind } }]))), false, kind);
+      }
       const noActor = { ...entry };
       delete noActor.actor;
-      assert.equal(validateMediaBuys(response(buy({}, [noActor]))), false);
-      assert.ok(validateMediaBuys(response(buy({}, [{ ...entry, actor: "seller_operator" }]))));
-      for (const actor of ["adcp", "connected_platform", "buyer", "ops@seller.example"]) {
-        assert.equal(validateMediaBuys(response(buy({}, [{ ...entry, actor }]))), false, actor);
-      }
+      assert.ok(validateMediaBuys(response(buy({}, [noActor]))), "actor is not required by a term application");
       assert.equal(validateMediaBuys(response(buy({}, [{ ...entry, reason: "Forecast shortfall" }]))), false);
     });
 
-    it("reuses the account change feed origin vocabulary instead of a separate one", () => {
+    it("reuses the account change feed origin vocabulary instead of a separate one", async () => {
       const origin = readSchema("/schemas/core/account-change.json").properties.origin.properties.kind.enum;
       assert.ok(origin.includes("seller_system") && origin.includes("seller_operator"));
       assert.ok(!fs.existsSync(path.join(SCHEMA_ROOT, "enums", "change-origin.json")));
@@ -708,6 +715,22 @@ describe("seller offers (media_buy.seller_offers)", () => {
       assert.equal(change["x-status"], "experimental");
       assert.equal(change["x-added-in"], "3.3.0");
       assert.equal(change["x-entity"], "media_buy_change_term");
+      const validateChange = await compile(readSchema("/schemas/core/account-change.json"));
+      const record = {
+        change_id: "chg_01K38G7X8ZGX9T4F1Q5W6Y2M3N",
+        recorded_at: "2026-11-12T09:30:00Z",
+        resource: { type: "media_buy", account_id: "acc_example", resource_id: "mb_a" },
+        action: "updated",
+        origin: { kind: "seller_system" },
+        repair: { task: "get_media_buys" },
+        term_id: "release_budget_1",
+        reason: "forecast_shortfall",
+      };
+      assert.ok(validateChange(record), JSON.stringify(validateChange.errors));
+      const noReasonRecord = { ...record };
+      delete noReasonRecord.reason;
+      assert.equal(validateChange(noReasonRecord), false, "term_id requires reason");
+      assert.equal(validateChange({ ...record, origin: { kind: "connected_platform" } }), false, "term_id requires a seller origin");
     });
 
     it("announces an applied adjustment through media_buy.allowance_applied", () => {

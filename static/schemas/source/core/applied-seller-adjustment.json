@@ -4,7 +4,7 @@
   "title": "Applied Seller Adjustment",
   "x-status": "experimental",
   "x-added-in": "3.3.0",
-  "description": "Record of one change the seller applied to a live media buy under a seller-held change term (change_terms[] with holder seller). It is the readback in get_media_buys applied_adjustments[] and its adjustment_id is the notification_id of media_buy.allowance_applied. Each application advances the buy's revision and mints an accepted successor proposal, named by accepted_proposal_id, that carries the terms forward. The revision history entry records the origin in actor (seller_system for automation, seller_operator when a person applied it), plus term_id and reason, and the account change feed record carries the same origin.kind, term_id and reason. Experimental in AdCP 3.3 (media_buy.seller_adjustment_allowances).",
+  "description": "Record of one change the seller applied to a live media buy under a seller-held change term (change_terms[] with holder seller). It is the readback in get_media_buys applied_adjustments[] and its adjustment_id is the notification_id of media_buy.allowance_applied. Each application advances the buy's revision and mints an accepted successor proposal, named by accepted_proposal_id, that carries the terms forward. The revision history entry records the origin in origin.kind (seller_system for automation, seller_operator when a person applied it), plus term_id and reason, and the account change feed record carries the same origin.kind, term_id and reason. Experimental in AdCP 3.3 (media_buy.seller_adjustment_allowances).",
   "type": "object",
   "properties": {
     "adjustment_id": {
