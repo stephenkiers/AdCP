@@ -825,7 +825,7 @@ function collectIdentifierExampleDuplicates(obj, schemaPath, inExamples = false,
  * Build-time hygiene for repo-authored identifier examples (#8301). Fails when
  * any `identifiers` array inside a schema example repeats a (type, value) pair.
  * This does not enforce dedupe on external traffic; schema uniqueItems only
- * catches byte-identical entries.
+ * catches entries equal in every member.
  */
 function lintIdentifierExampleUniqueness(sourceDir) {
   const violations = [];
@@ -841,7 +841,12 @@ function lintIdentifierExampleUniqueness(sourceDir) {
       if (!entry.name.endsWith('.json')) continue;
       let schema;
       try { schema = JSON.parse(fs.readFileSync(p, 'utf8')); }
-      catch { continue; }
+      catch (err) {
+        throw new Error(
+          `Identifier example uniqueness lint: cannot parse ${path.relative(sourceDir, p)} (${err.message}). ` +
+          'A malformed schema cannot be checked, so the build fails.'
+        );
+      }
       const found = collectIdentifierExampleDuplicates(schema, path.relative(sourceDir, p));
       for (const { schemaPath, duplicates } of found) {
         for (const dup of duplicates) violations.push({ schemaPath, dup });

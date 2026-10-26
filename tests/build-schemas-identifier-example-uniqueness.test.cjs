@@ -64,3 +64,54 @@ test('lintIdentifierExampleUniqueness: fails on a duplicate (type, value) pair d
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
 });
+
+test('lintIdentifierExampleUniqueness: fails on a duplicate nested under a property examples[0].placements[0].identifiers', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    writeJson(path.join(tmpRoot, 'core', 'product.json'), {
+      title: 'Product',
+      properties: {
+        placements: {
+          type: 'array',
+          examples: [
+            {
+              placements: [
+                {
+                  identifiers: [
+                    { type: 'venue_id', value: '1' },
+                    { type: 'venue_id', value: '1' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    assert.throws(
+      () => lintIdentifierExampleUniqueness(tmpRoot),
+      /core\/product\.json.*duplicate \(type="venue_id", value="1"\)/s,
+    );
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('lintIdentifierExampleUniqueness: the real static/schemas/source tree has zero duplicate identifier examples', () => {
+  const sourceDir = path.resolve(__dirname, '..', 'static', 'schemas', 'source');
+  assert.doesNotThrow(() => lintIdentifierExampleUniqueness(sourceDir));
+});
+
+test('lintIdentifierExampleUniqueness: throws on a schema that is not valid JSON', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    fs.mkdirSync(path.join(tmpRoot, 'core'), { recursive: true });
+    fs.writeFileSync(path.join(tmpRoot, 'core', 'broken.json'), '{ "examples": [ ', 'utf8');
+    assert.throws(
+      () => lintIdentifierExampleUniqueness(tmpRoot),
+      /cannot parse core[\\/]broken\.json/,
+    );
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});

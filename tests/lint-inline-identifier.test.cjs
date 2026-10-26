@@ -162,6 +162,29 @@ test('the walker reaches inline copies under $defs, allOf, and if/then', (t) => 
   ]);
 });
 
+test('an inline copy under prefixItems fails (rule 1)', (t) => {
+  const violations = lintTree(t, {
+    'core/identifier.json': canonical(),
+    'x/tuple.json': { type: 'array', prefixItems: [inlineCopy()] },
+  });
+  assert.deepEqual(violations, [
+    { rule: 'inline-copy', file: 'x/tuple.json', path: '/prefixItems/0' },
+  ]);
+});
+
+test('a schema that is not valid JSON is a violation, not a silent skip', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lint-inline-identifier-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'x'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'core'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'core', 'identifier.json'), JSON.stringify(canonical()));
+  fs.writeFileSync(path.join(dir, 'x', 'broken.json'), '{ "properties": { "id": ');
+  const violations = lint(dir, new Map()).map((v) => ({ rule: v.rule, file: v.file, path: v.path }));
+  assert.deepEqual(violations, [
+    { rule: 'malformed-json', file: 'x/broken.json', path: '/' },
+  ]);
+});
+
 test('ALLOWED starts empty', () => {
   assert.equal(ALLOWED.size, 0);
 });

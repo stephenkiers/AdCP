@@ -184,9 +184,10 @@ ASCII hostnames with at least two labels, labels of at most 63 characters, and
 a hostname of at most 253 characters. IDNs use lowercase A-label/punycode form.
 Only `domain` permits a leading `*.`. Existing matching rules are unchanged.
 
-The rule applies wherever the identifier definition is referenced, not only to
-property-list inputs: `properties[].identifiers` in `adagents.json` (via
-`core/property.json`), adagents placement definitions
+The rule also applies to newly covered sites, not only to property-list inputs.
+Newly covered sites include `properties[].identifiers` in `adagents.json` (via
+`core/property.json`), inline agent properties in `adagents.json`
+(`inline_properties`, via `core/property.json`), adagents placement definitions
 (`core/placement-definition.json`), `placements[].identifiers` in `get_products`
 (`core/placement.json`), canonical product placements
 (`core/canonical-placement.json`), and registry events and `property-error`
@@ -448,7 +449,7 @@ New enum values (`nmo`, `videoamp`, `mxf`, `mpeg2`, `avc_intra`, `xavc`, `print_
 
 ## What can fail validation
 
-A schema-valid 3.2 message stays schema-valid under 3.3 except for the [domain identifier constraints](#property-domain-identifiers-have-an-enforceable-format) (mixed-case, trailing-dot, and URL-shaped `domain` / `subdomain` values are now rejected at property-list, `adagents.json`, placement, and registry-event identifier sites) and names 3.3 now defines:
+A schema-valid 3.2 message stays schema-valid under 3.3 except for the [domain identifier constraints](#property-domain-identifiers-have-an-enforceable-format) (mixed-case, trailing-dot, and URL-shaped `domain` / `subdomain` values are now rejected at property-list, `adagents.json` (including inline agent properties), placement, registry-event, and `property-error` identifier sites) and names 3.3 now defines:
 
 - `adcp.implementation` in `get_adcp_capabilities`: previously an open extension point, now the SDK implementation shape. Migrate to it or to a vendor-owned `ext` namespace.
 - `media_buy.features.catalog_ingestion`: previously any boolean was admissible; it is now an object that requires `catalog_management: true`.

@@ -31,7 +31,7 @@
  * `properties`, `patternProperties`, `$defs`, `definitions`, `dependencies`,
  * `dependentSchemas`, `items`, `additionalItems`, `additionalProperties`,
  * `contains`, `propertyNames`, `not`, `if`, `then`, `else`, `allOf`, `anyOf`,
- * `oneOf`, and the unevaluated keywords.
+ * `oneOf`, `prefixItems`, and the unevaluated keywords.
  *
  * Allowlist
  * ---------
@@ -59,7 +59,7 @@ const ALLOWED = new Map();
 const INERT_SIBLINGS = new Set(['$ref', 'description', '$comment']);
 
 const SCHEMA_MAP_KEYWORDS = ['properties', 'patternProperties', 'definitions', '$defs', 'dependencies', 'dependentSchemas'];
-const SCHEMA_ARRAY_KEYWORDS = ['allOf', 'anyOf', 'oneOf'];
+const SCHEMA_ARRAY_KEYWORDS = ['allOf', 'anyOf', 'oneOf', 'prefixItems'];
 const SCHEMA_KEYWORDS = [
   'items', 'additionalItems', 'additionalProperties', 'contains', 'propertyNames', 'not',
   'if', 'then', 'else', 'unevaluatedItems', 'unevaluatedProperties',
@@ -86,12 +86,25 @@ function listSchemaFiles(dir, out = []) {
   return out;
 }
 
-function loadSchemas(schemaDir) {
+/**
+ * Parse every schema under schemaDir. A file that fails to parse is pushed to
+ * parseErrors as a violation rather than skipped, so a malformed schema cannot
+ * hide an inline copy from the walk.
+ */
+function loadSchemas(schemaDir, parseErrors = []) {
   const docs = new Map(); // relFile -> doc
   for (const abs of listSchemaFiles(schemaDir)) {
+    const file = path.relative(schemaDir, abs).split(path.sep).join('/');
     try {
-      docs.set(path.relative(schemaDir, abs).split(path.sep).join('/'), JSON.parse(fs.readFileSync(abs, 'utf8')));
-    } catch { /* skip malformed; other tests report it */ }
+      docs.set(file, JSON.parse(fs.readFileSync(abs, 'utf8')));
+    } catch (err) {
+      parseErrors.push({
+        rule: 'malformed-json',
+        file,
+        path: '/',
+        message: `schema is not valid JSON (${err.message}); the identifier walk cannot check it`,
+      });
+    }
   }
   return docs;
 }
@@ -218,7 +231,10 @@ function lintDocs(docs, allowed = ALLOWED) {
 }
 
 function lint(schemaDir = SCHEMA_DIR, allowed = ALLOWED) {
-  return lintDocs(loadSchemas(schemaDir), allowed);
+  const parseErrors = [];
+  const docs = loadSchemas(schemaDir, parseErrors);
+  const violations = lintDocs(docs, allowed);
+  return [...parseErrors, ...violations].sort((a, b) => (a.file + a.path).localeCompare(b.file + b.path));
 }
 
 if (require.main === module) {
