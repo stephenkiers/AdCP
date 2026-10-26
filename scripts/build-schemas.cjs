@@ -793,6 +793,79 @@ function lintVendorMetricSemanticUniqueness(sourceDir) {
 }
 
 /**
+ * Recursively collect `identifiers` arrays found inside schema `examples` and
+ * report every (type, value) pair that occurs more than once in one array.
+ * Extra keys are ignored for the key, so `{type, value}` and
+ * `{type, value, x}` collide. Returns an array of { schemaPath, duplicates[] }.
+ */
+function collectIdentifierExampleDuplicates(obj, schemaPath, inExamples = false, out = []) {
+  if (!obj || typeof obj !== 'object') return out;
+  if (Array.isArray(obj)) {
+    for (const item of obj) collectIdentifierExampleDuplicates(item, schemaPath, inExamples, out);
+    return out;
+  }
+  if (inExamples && Array.isArray(obj.identifiers) && obj.identifiers.length >= 2) {
+    const seen = new Set();
+    const duplicates = [];
+    for (const entry of obj.identifiers) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+      const key = JSON.stringify([entry.type ?? null, entry.value ?? null]);
+      if (seen.has(key)) duplicates.push({ type: entry.type ?? null, value: entry.value ?? null });
+      seen.add(key);
+    }
+    if (duplicates.length > 0) out.push({ schemaPath, duplicates });
+  }
+  for (const [key, val] of Object.entries(obj)) {
+    collectIdentifierExampleDuplicates(val, schemaPath, inExamples || key === 'examples', out);
+  }
+  return out;
+}
+
+/**
+ * Build-time hygiene for repo-authored identifier examples (#8301). Fails when
+ * any `identifiers` array inside a schema example repeats a (type, value) pair.
+ * This does not enforce dedupe on external traffic; schema uniqueItems only
+ * catches byte-identical entries.
+ */
+function lintIdentifierExampleUniqueness(sourceDir) {
+  const violations = [];
+
+  function walk(d) {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'extensions' || entry.name === 'bundled') continue;
+        walk(p);
+        continue;
+      }
+      if (!entry.name.endsWith('.json')) continue;
+      let schema;
+      try { schema = JSON.parse(fs.readFileSync(p, 'utf8')); }
+      catch { continue; }
+      const found = collectIdentifierExampleDuplicates(schema, path.relative(sourceDir, p));
+      for (const { schemaPath, duplicates } of found) {
+        for (const dup of duplicates) violations.push({ schemaPath, dup });
+      }
+    }
+  }
+
+  walk(sourceDir);
+
+  if (violations.length > 0) {
+    const lines = violations.map(v =>
+      `  ${v.schemaPath} — identifiers: duplicate (type="${v.dup.type}", value="${v.dup.value}")`
+    );
+    throw new Error(
+      `Identifier example uniqueness lint: ${violations.length} duplicate (type, value) pair(s) found in schema examples.\n\n` +
+      lines.join('\n') +
+      `\n\nFix: each (type, value) MUST appear at most once per identifiers array in an example; ` +
+      `extra keys do not make two entries distinct.\n` +
+      `See static/schemas/source/core/identifier.json. Issue: adcontextprotocol/adcp#8301.`
+    );
+  }
+}
+
+/**
  * Compare two minor versions (e.g., "2.5" vs "2.6")
  * Returns: negative if a < b, 0 if equal, positive if a > b
  */
@@ -2695,6 +2768,10 @@ async function main() {
   // constraint on example payloads embedded in schema files. Issue #3502.
   lintVendorMetricSemanticUniqueness(SOURCE_DIR);
 
+  // Lint identifier example uniqueness (#8301): no identifiers array in a
+  // schema example repeats a (type, value) pair, extra keys included.
+  lintIdentifierExampleUniqueness(SOURCE_DIR);
+
   // Lint error-code enumMetadata coverage: every enum value MUST have a
   // structured recovery classification, and that classification MUST agree
   // with the "Recovery: X" prose in enumDescriptions. Stops the
@@ -2907,6 +2984,8 @@ module.exports = {
   collectVendorMetricExamples,
   canonicalQualifier,
   lintVendorMetricSemanticUniqueness,
+  collectIdentifierExampleDuplicates,
+  lintIdentifierExampleUniqueness,
   generateBundledSchemas,
 };
 
