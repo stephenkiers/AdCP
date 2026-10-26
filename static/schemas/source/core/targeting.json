@@ -194,6 +194,7 @@
     },
     "collection_lists": {
       "type": "array",
+      "maxItems": 100,
       "x-status": "experimental",
       "x-added-in": "3.3.0",
       "x-adcp-validation": {
@@ -207,6 +208,7 @@
     },
     "collection_lists_exclude": {
       "type": "array",
+      "maxItems": 100,
       "x-status": "experimental",
       "x-added-in": "3.3.0",
       "x-adcp-validation": {

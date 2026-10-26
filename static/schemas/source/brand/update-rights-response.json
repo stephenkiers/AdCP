@@ -19,6 +19,7 @@
       "properties": {
         "rights_id": {
           "type": "string",
+          "maxLength": 255,
           "description": "Rights grant identifier",
           "x-entity": "rights_grant"
         },
@@ -28,6 +29,7 @@
         },
         "generation_credentials": {
           "type": "array",
+          "maxItems": 100,
           "description": "Re-issued credentials reflecting updated terms (new expiration dates, adjusted caps)",
           "items": {
             "$ref": "/schemas/core/generation-credential.json"
@@ -77,6 +79,7 @@
       "properties": {
         "errors": {
           "type": "array",
+          "maxItems": 100,
           "items": {
             "$ref": "/schemas/core/error.json"
           },

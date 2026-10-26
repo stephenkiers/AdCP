@@ -69,6 +69,7 @@
           },
           "platform_id": {
             "type": "string",
+            "maxLength": 255,
             "description": "The seller's identifier for this creative in its source of truth. Same meaning as platform_id in the sync_creatives response, readable after that response is gone. May equal creative_id for seller-assigned creatives.",
             "$comment": "x-entity deliberately omitted: seller-opaque identifier in the seller's own namespace; buyers echo creative_id, never platform_id, on AdCP requests.",
             "x-added-in": "3.3.0"
@@ -89,7 +90,11 @@
             }
           },
           "seller_revision": {
-            "type": ["integer", "string"],
+            "type": [
+              "integer",
+              "string"
+            ],
+            "maxLength": 255,
             "description": "Seller-maintained change token for this creative, distinct from the buyer-assigned revision_id. Sellers MUST use a positive integer or a string of 1 to 255 characters; the schema does not encode these bounds because JSON Schema bounds on an integer-or-string type break SDK code generation. The seller advances it on every committed change to state this read reports, whatever its origin: an AdCP task, a seller operator, seller automation, another authorized principal, or a connected platform. An externally observed change advances it when the seller ingests it. Reads, validation-only calls, and exact idempotency replays do not advance it. Sellers MUST NOT reuse a value for a different state of the same creative or move it backward. Buyers MUST treat the value as opaque: equal values mean the same state as the seller has observed and a different value means the state changed. Integer values also order numerically. A change record's resource_revision is the value immediately after that change, in the same JSON type; a read that returns a different value reflects later changes. Sellers MUST NOT use it as the buyer revision_id, and a buyer revision_id never substitutes for it. Optional; a seller that does not maintain it omits it.",
             "x-entity": "creative_seller_revision",
             "x-added-in": "3.3.0"
@@ -303,6 +308,7 @@
                     },
                     "trackers": {
                       "type": "array",
+                      "maxItems": 100,
                       "items": { "$ref": "/schemas/core/assignment-tracker.json" },
                       "description": "The complete assignment-scoped tracker list for this creative on this package, retaining the accepted URL templates, events, multiplicity, and order. Sellers supporting creative.supports_assignment_trackers MUST return this array, using [] when no assignment trackers exist. Excludes the creative's own trackers, which remain in its assets and also fire for this placement; this is not a combined effective tracker list.",
                       "x-added-in": "3.3.0"

@@ -36,6 +36,7 @@
     "adjustment_latency_seconds": { "$ref": "#/definitions/LatencyPercentiles", "description": "Observed seconds from official finalized_at to the first adjustment, required when official_revisions_adjusted is nonzero." },
     "adjustment_magnitude": {
       "type": "array",
+      "maxItems": 100,
       "description": "Optional absolute adjustment-magnitude percentiles for comparable control totals such as spend.",
       "items": {
         "type": "object",
@@ -43,8 +44,8 @@
           "control_total_name": { "type": "string", "minLength": 1, "maxLength": 128 },
           "unit": { "type": "string", "minLength": 1, "maxLength": 32 },
           "sample_count": { "type": "integer", "minimum": 1 },
-          "p50_absolute_delta": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" },
-          "p95_absolute_delta": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" }
+          "p50_absolute_delta": { "type": "string", "maxLength": 255, "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" },
+          "p95_absolute_delta": { "type": "string", "maxLength": 255, "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" }
         },
         "required": ["control_total_name", "unit", "sample_count", "p50_absolute_delta", "p95_absolute_delta"],
         "additionalProperties": false

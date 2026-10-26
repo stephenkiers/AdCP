@@ -24,6 +24,7 @@
     },
     "message": {
       "type": "string",
+      "maxLength": 2000,
       "description": "Human-readable summary of the process and what to have ready. The fallback whenever a reader does not understand a requirement."
     },
     "ext": {

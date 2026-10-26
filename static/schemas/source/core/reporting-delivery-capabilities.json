@@ -65,6 +65,7 @@
     },
     "offerings": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "$ref": "/schemas/core/reporting-delivery-offering.json"
       },
@@ -98,6 +99,7 @@
     },
     "reliability_statistics": {
       "type": "array",
+      "maxItems": 100,
       "items": { "$ref": "/schemas/core/reporting-reliability-statistics.json" },
       "description": "Optional evidence-scoped observed performance for advertised offerings. offering_id values MUST be unique and name offerings in this capability block.",
       "uniqueItems": true

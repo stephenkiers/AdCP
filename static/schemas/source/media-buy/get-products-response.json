@@ -198,6 +198,7 @@
               },
               "result_product_id": {
                 "type": "string",
+                "maxLength": 255,
                 "minLength": 1,
                 "x-entity": "product",
                 "x-added-in": "3.3.0",

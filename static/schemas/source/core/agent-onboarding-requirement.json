@@ -12,26 +12,31 @@
     },
     "role": {
       "type": "string",
+      "maxLength": 64,
       "description": "aao_verified: the badge role required, such as media-buy."
     },
     "verification_modes": {
       "type": "array",
-      "items": { "type": "string" },
+      "maxItems": 32,
+      "items": { "type": "string", "maxLength": 64 },
       "minItems": 1,
       "description": "aao_verified: accepted verification modes, as the badge token names them."
     },
     "verified_specialisms": {
       "type": "array",
-      "items": { "type": "string" },
+      "maxItems": 100,
+      "items": { "type": "string", "maxLength": 500 },
       "minItems": 1,
       "description": "aao_verified: specialisms the badge's verified_specialisms claim must include."
     },
     "adcp_version": {
       "type": "string",
+      "maxLength": 64,
       "description": "aao_verified: the AdCP release the badge must cover."
     },
     "id": {
       "type": "string",
+      "maxLength": 255,
       "description": "storyboard: the storyboard id. experimental_feature: the feature id."
     },
     "ext": {

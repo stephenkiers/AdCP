@@ -50,6 +50,7 @@
         },
         "directions": {
           "type": "array",
+          "maxItems": 32,
           "description": "Supported transfer directions. buyer_to_seller: buyer writes to a seller-hosted bucket. seller_to_buyer: seller reads from a buyer-hosted bucket. Absent means unspecified (resolve during account setup), not neither.",
           "items": {
             "type": "string",
@@ -78,6 +79,7 @@
         },
         "consumer_identities": {
           "type": "array",
+          "maxItems": 100,
           "description": "Principals the buyer grants access to in the vendor's system. identity is always required. cloud and region are optional, paired deployment metadata: omit both for global principals (for example, an IAM principal or federated identity). Their operational meaning is vendor-specific — they may constrain direct-share reachability or select a fulfillment route, or may be routing and cost hints only. They are not compliance boundaries; data-transfer assessments key on the recipient entity's jurisdiction, not the grantee account's region. Optional: sellers MAY instead communicate identities during account setup.",
           "items": {
             "type": "object",
@@ -89,10 +91,12 @@
               },
               "region": {
                 "type": "string",
+                "maxLength": 64,
                 "description": "Vendor/cloud region identifier. Format follows the cloud family's region naming; not constrained by this schema."
               },
               "identity": {
                 "type": "string",
+                "maxLength": 500,
                 "minLength": 1,
                 "description": "Principal to grant, interpreted relative to the enclosing entry's vendor.domain. Format is vendor-specific and opaque — Snowflake: orgname.accountname; Databricks: sharing recipient identifier; BigQuery: IAM principal."
               }
