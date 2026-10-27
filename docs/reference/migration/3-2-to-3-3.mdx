@@ -200,12 +200,13 @@ rejected an extra key in an identifier (for example `{type, value, vlaue}`) now
 accept it. This is a loosening: a 3.2 peer, or any peer on an older release,
 that validates strictly can reject or misread an extra key a 3.3 producer sends.
 
-**Rejection at response and document sites.** The `value` rule that an invalid
-value MUST cause rejection of the containing request also applies at
-`get_products` responses, `adagents.json`, and registry events. There, read
-"containing request" as the containing response, document, or event. A strict
-receiver that rejects a bad `adagents.json` domain is recoverable only by the
-publisher fixing the file; a buyer cannot repair it on the publisher's behalf.
+**Where rejection applies.** The `value` rule is unchanged: an invalid value
+MUST cause rejection of the containing request, and a fetched document or
+snapshot that carries one is rejected atomically. This release does not specify
+how a receiver handles an invalid value inside a `get_products` response or a
+registry event. A receiver that rejects a bad `adagents.json` domain is
+recoverable only by the publisher fixing the file; a buyer cannot repair it on
+the publisher's behalf.
 
 **Before:** the bare string schema accepted `Example.com`, `example.com.`, and
 `https://www.example.com/path`, so a buyer could submit an exclusion the seller
@@ -449,7 +450,7 @@ New enum values (`nmo`, `videoamp`, `mxf`, `mpeg2`, `avc_intra`, `xavc`, `print_
 
 ## What can fail validation
 
-A schema-valid 3.2 message stays schema-valid under 3.3 except for the [domain identifier constraints](#property-domain-identifiers-have-an-enforceable-format) (mixed-case, trailing-dot, and URL-shaped `domain` / `subdomain` values are now rejected at property-list, `adagents.json` (including inline agent properties), placement, registry-event, and `property-error` identifier sites) and names 3.3 now defines:
+A schema-valid 3.2 message stays schema-valid under 3.3 except for the [domain identifier constraints](#property-domain-identifiers-have-an-enforceable-format) (mixed-case, trailing-dot, and URL-shaped `domain` / `subdomain` values are now schema-invalid at property-list, `adagents.json` (including inline agent properties), placement, registry-event, and `property-error` identifier sites) and names 3.3 now defines:
 
 - `adcp.implementation` in `get_adcp_capabilities`: previously an open extension point, now the SDK implementation shape. Migrate to it or to a vendor-owned `ext` namespace.
 - `media_buy.features.catalog_ingestion`: previously any boolean was admissible; it is now an object that requires `catalog_management: true`.
