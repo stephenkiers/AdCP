@@ -816,7 +816,9 @@ function collectIdentifierExampleDuplicates(obj, schemaPath, inExamples = false,
     if (duplicates.length > 0) out.push({ schemaPath, duplicates });
   }
   for (const [key, val] of Object.entries(obj)) {
-    collectIdentifierExampleDuplicates(val, schemaPath, inExamples || key === 'examples', out);
+    // Only an array `examples` keyword opens the example scope; a property that happens to be
+    // named "examples" inside `properties` holds a schema object and must not.
+    collectIdentifierExampleDuplicates(val, schemaPath, inExamples || (key === 'examples' && Array.isArray(val)), out);
   }
   return out;
 }
@@ -834,6 +836,8 @@ function lintIdentifierExampleUniqueness(sourceDir) {
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, entry.name);
       if (entry.isDirectory()) {
+        // Skipped like the other source walkers: `bundled/` is generated output and `extensions/`
+        // holds third-party-authored schemas this repo does not own the examples of.
         if (entry.name === 'extensions' || entry.name === 'bundled') continue;
         walk(p);
         continue;

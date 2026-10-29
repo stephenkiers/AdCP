@@ -115,3 +115,51 @@ test('lintIdentifierExampleUniqueness: throws on a schema that is not valid JSON
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
 });
+
+test('lintIdentifierExampleUniqueness: same value under different types is not a duplicate', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    writeJson(path.join(tmpRoot, 'core', 'placement.json'), {
+      examples: [{ identifiers: [{ type: 'venue_id', value: '1' }, { type: 'facility_id', value: '1' }] }],
+    });
+    assert.doesNotThrow(() => lintIdentifierExampleUniqueness(tmpRoot));
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('lintIdentifierExampleUniqueness: malformed identifiers entries are skipped, not thrown on', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    writeJson(path.join(tmpRoot, 'core', 'placement.json'), {
+      examples: [{ identifiers: [null, 'x', ['venue_id', '1'], { type: 'venue_id', value: '1' }] }],
+    });
+    assert.doesNotThrow(() => lintIdentifierExampleUniqueness(tmpRoot));
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('lintIdentifierExampleUniqueness: bundled/ and extensions/ are not scanned', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    const dup = { examples: [{ identifiers: [{ type: 'venue_id', value: '1' }, { type: 'venue_id', value: '1' }] }] };
+    writeJson(path.join(tmpRoot, 'bundled', 'x.json'), dup);
+    writeJson(path.join(tmpRoot, 'extensions', 'x.json'), dup);
+    assert.doesNotThrow(() => lintIdentifierExampleUniqueness(tmpRoot));
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});
+
+test('lintIdentifierExampleUniqueness: a property named "examples" does not open the example scope', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'adcp-identifier-example-uniqueness-'));
+  try {
+    writeJson(path.join(tmpRoot, 'core', 'x.json'), {
+      properties: { examples: { identifiers: [{ type: 'venue_id', value: '1' }, { type: 'venue_id', value: '1' }] } },
+    });
+    assert.doesNotThrow(() => lintIdentifierExampleUniqueness(tmpRoot));
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});

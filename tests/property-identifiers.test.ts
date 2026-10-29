@@ -32,8 +32,21 @@ describe('property identifier hostnames', () => {
   });
 
   it.each(['example.com', 'news.publisher.example', '*.example.com', 'xn--bcher-kva.example', 'a-b.example', '3news.example'])(
-    'accepts a domain selector: %s', value => expect(validate({ type: 'domain', value })).toBe(true),
+    'accepts a domain selector: %s', value => {
+      expect(validate({ type: 'domain', value })).toBe(true);
+      expect(isRegistryDomain(value, { sandbox: true, wildcard: true })).toBe(true);
+    },
   );
+
+  // The schema and registry-domain.ts share hostname syntax (the vectors above run through both).
+  // They differ on purpose: the schema is syntax-only, while the registry also rejects IP literals
+  // and, outside sandbox, reserved test names. Pin that so the difference stays intentional.
+  it('differs from the registry validator only on IP literals and reserved names', () => {
+    expect(validate({ type: 'domain', value: '127.0.0.1' })).toBe(true);
+    expect(isRegistryDomain('127.0.0.1', { sandbox: true })).toBe(false);
+    expect(validate({ type: 'domain', value: 'publisher.example' })).toBe(true);
+    expect(isRegistryDomain('publisher.example')).toBe(false);
+  });
 
   it.each([
     'https://www.example.com/path', 'example.com/path', 'example.com:443',
@@ -114,6 +127,14 @@ describe('identifier single definition across the four $ref sites', () => {
       for (const site of itemSites) expect(sites[site]({ type: 'domain', value }), `${site}: ${value}`).toBe(false);
     },
   );
+
+  it.each([
+    {}, { type: 'domain' }, { value: 'a.com' }, { type: 'domain', value: 1 }, { type: 'not_a_type', value: 'a' },
+    { type: 'venue_id', value: null }, 'a.com', null, [],
+  ])('rejects structurally invalid identifier %j at the canonical identifier and every $ref site', identifier => {
+    expect(validate(identifier)).toBe(false);
+    for (const site of itemSites) expect(sites[site](identifier), site).toBe(false);
+  });
 
   it.each([{ type: 'screen_id', value: 'space:1234931339' }, { type: 'venue_id', value: 'geopath:30961' }])(
     'accepts authority-prefixed placement values with non-domain types: %j', identifier => {
