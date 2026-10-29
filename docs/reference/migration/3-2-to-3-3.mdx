@@ -200,6 +200,17 @@ rejected an extra key in an identifier (for example `{type, value, vlaue}`) now
 accept it. This is a loosening: a 3.2 peer, or any peer on an older release,
 that validates strictly can reject or misread an extra key a 3.3 producer sends.
 
+The loosening applies at every site that references `core/identifier.json`,
+including the ones that already referenced it: delivery metrics
+(`core/property-delivery-metrics.json` and its collection, installment, and
+placement variants), `core/creative-variant.json`, `core/registry-event.json`,
+and the `property/` list schemas (`base-property-source`, `delivery-record`,
+`get-property-list-response`, `property-list-filters`, `validation-result`).
+DR-0019 asks that a loosening name the unknown-key lint that replaces closed
+validation. That lint is not part of this release; it is tracked in a separate
+issue (TBD, to be filed before merge). Until it lands, a misspelled key in an
+identifier validates and is ignored.
+
 **Where rejection applies.** The `value` rule is unchanged: an invalid value
 MUST cause rejection of the containing request, and a fetched document or
 snapshot that carries one is rejected atomically. This release does not specify
