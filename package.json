@@ -151,6 +151,7 @@
     "test:test-coverage": "node --test --test-force-exit tests/test-coverage-registration.test.cjs",
     "test:error-code-drift": "node scripts/lint-error-code-drift.cjs",
     "lint:additive-minor": "node scripts/lint-additive-minor.cjs",
+    "lint:inline-identifier": "node scripts/lint-inline-identifier.cjs",
     "test:additive-minor": "node --test --test-force-exit --test-timeout=30000 tests/lint-additive-minor.test.cjs && npm run lint:additive-minor",
     "test:language-tag-refs": "node --test --test-force-exit --test-timeout=30000 tests/lint-language-tag-refs.test.cjs && node scripts/lint-language-tag-refs.cjs",
     "test:compliance-snippets": "node --test --test-force-exit --test-timeout=30000 tests/generate-compliance-snippets.node.mjs tests/link-compliance-symbols.node.mjs && npm run build:compliance -- --check",

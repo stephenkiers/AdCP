@@ -17,12 +17,16 @@
  *   1. Inline copy. Any schema node other than the canonical root whose
  *      `properties.type` `$ref`s `enums/identifier-types.json`. The enum `$ref`
  *      is the only signal. Bare `{type, value}` key sets are NOT matched: several
- *      unrelated schemas have that shape with different enums.
+ *      unrelated schemas have that shape with different enums. A copy that
+ *      inlines the enum values instead of `$ref`ing them is out of scope and
+ *      evades this rule. The `$ref` is resolved relative to the file, so
+ *      `../enums/identifier-types.json` and `/schemas/enums/...` both match.
  *   2. Sibling hack. Any schema node that `$ref`s `core/identifier.json` and
  *      carries keywords other than `description` or `$comment`.
  *   3. Canonical stays open-explicit. `core/identifier.json` must declare
- *      `additionalProperties: true`. Omission is not enough: it switches the
- *      generated Python model to `extra='ignore'`, which drops unknown keys.
+ *      `additionalProperties: true`. Keeping the open posture explicit makes a
+ *      later change to it a visible diff; revisit this rule when the unknown-key
+ *      lint that DR-0019 requires lands.
  *
  * Walk
  * ----
@@ -33,9 +37,17 @@
  * `contains`, `propertyNames`, `not`, `if`, `then`, `else`, `allOf`, `anyOf`,
  * `oneOf`, `prefixItems`, and the unevaluated keywords.
  *
+ * Running
+ * -------
+ * `npm run lint:inline-identifier` runs this file directly; it is also exercised
+ * by tests/lint-inline-identifier.test.cjs inside `npm run test:schemas`. It is
+ * not called from the schema build.
+ *
  * Allowlist
  * ---------
  * Intentional inline copies go in ALLOWED as "relFile|jsonPath" -> reason. The
+ * key splits on the FIRST `|`, so a jsonPath may contain `|` but a file name may
+ * not. The
  * map starts empty. An entry that no longer matches an inline copy, or that has
  * no reason, is itself a violation, so the allowlist can only stay accurate.
  * tests/lint-inline-identifier.test.cjs covers both.
@@ -87,6 +99,10 @@ function listSchemaFiles(dir, out = []) {
 }
 
 /**
+ * @param {string} schemaDir Directory of schema sources (`bundled/` and `extensions/` are skipped).
+ * @param {Array<object>} [parseErrors] Collects `malformed-json` violations.
+ * @returns {Map<string, object>} relFile (posix, relative to schemaDir) -> parsed doc.
+ *
  * Parse every schema under schemaDir. A file that fails to parse is pushed to
  * parseErrors as a violation rather than skipped, so a malformed schema cannot
  * hide an inline copy from the walk.
@@ -133,6 +149,15 @@ function isCanonicalRef(node, file) {
   return typeof node.$ref === 'string' && refFile(node.$ref, file) === CANONICAL;
 }
 
+/**
+ * Lint already-parsed schemas.
+ * @param {Map<string, object>} docs relFile -> parsed doc, as returned by loadSchemas.
+ * @param {Map<string, string>} [allowed] "relFile|jsonPath" -> reason. The key splits on the first `|`;
+ *   the root path is "/".
+ * @returns {Array<{rule: string, file: string, path: string, message: string}>} violations sorted by
+ *   file+path. Rules: inline-copy, sibling-keywords, canonical-open, allowlist. Parse failures are not
+ *   reported here; `lint()` adds them as `malformed-json`.
+ */
 function lintDocs(docs, allowed = ALLOWED) {
   const violations = [];
   const copyKeys = new Set();
@@ -206,13 +231,15 @@ function lintDocs(docs, allowed = ALLOWED) {
       rule: 'canonical-open',
       file: CANONICAL,
       path: '/additionalProperties',
-      message: 'canonical must declare additionalProperties: true explicitly (omission yields Python extra=ignore, ' +
-        'and false closes the record)',
+      message: 'canonical must declare additionalProperties: true explicitly (the open posture is kept explicit ' +
+        'so any change to it is a visible diff; revisit when the DR-0019 unknown-key lint lands)',
     });
   }
 
   for (const [key, reason] of allowed) {
-    const [file, jsonPath] = key.split('|');
+    const bar = key.indexOf('|');
+    const file = bar === -1 ? key : key.slice(0, bar);
+    const jsonPath = bar === -1 ? '/' : key.slice(bar + 1);
     if (typeof reason !== 'string' || reason.trim() === '') {
       violations.push({ rule: 'allowlist', file, path: jsonPath, message: 'allowlist entry has no reason string' });
     }
@@ -230,6 +257,13 @@ function lintDocs(docs, allowed = ALLOWED) {
   return violations;
 }
 
+/**
+ * Load and lint every schema under schemaDir.
+ * @param {string} [schemaDir] Defaults to static/schemas/source.
+ * @param {Map<string, string>} [allowed] See lintDocs.
+ * @returns {Array<{rule: string, file: string, path: string, message: string}>} violations, including
+ *   `malformed-json` for files that fail to parse (those files are not walked).
+ */
 function lint(schemaDir = SCHEMA_DIR, allowed = ALLOWED) {
   const parseErrors = [];
   const docs = loadSchemas(schemaDir, parseErrors);
@@ -254,4 +288,4 @@ if (require.main === module) {
   process.exit(1);
 }
 
-module.exports = { lint, lintDocs, loadSchemas, ALLOWED, SCHEMA_DIR, CANONICAL };
+module.exports = { lint, lintDocs, loadSchemas, refFile, ALLOWED, SCHEMA_DIR, CANONICAL };

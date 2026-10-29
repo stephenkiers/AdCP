@@ -8,7 +8,7 @@ const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { lint, ALLOWED, SCHEMA_DIR } = require('../scripts/lint-inline-identifier.cjs');
+const { lint, refFile, SCHEMA_DIR } = require('../scripts/lint-inline-identifier.cjs');
 
 const IDENTIFIER_TYPE_REF = { $ref: '/schemas/enums/identifier-types.json' };
 const ABSENT = Symbol('absent');
@@ -185,6 +185,44 @@ test('a schema that is not valid JSON is a violation, not a silent skip', (t) =>
   ]);
 });
 
-test('ALLOWED starts empty', () => {
-  assert.equal(ALLOWED.size, 0);
+test('refFile resolves relative, absolute-schema, and external refs', () => {
+  assert.equal(refFile('../enums/identifier-types.json', 'x/y.json'), 'enums/identifier-types.json');
+  assert.equal(refFile('/schemas/enums/identifier-types.json#/x', 'x/y.json'), 'enums/identifier-types.json');
+  assert.equal(refFile('#/$defs/a', 'x/y.json'), 'x/y.json');
+  assert.equal(refFile('https://example.com/schemas/enums/identifier-types.json', 'x/y.json'), null);
+  assert.equal(refFile('/other/identifier.json', 'x/y.json'), null);
+  assert.equal(refFile(undefined, 'x/y.json'), null);
+});
+
+test('an inline copy written with a relative enum ref still fails (rule 1)', (t) => {
+  const copy = inlineCopy();
+  copy.properties.type = { $ref: '../enums/identifier-types.json' };
+  const violations = lintTree(t, {
+    'core/identifier.json': canonical(),
+    'x/rel.json': { properties: { id: copy } },
+  });
+  assert.deepEqual(violations, [{ rule: 'inline-copy', file: 'x/rel.json', path: '/properties/id' }]);
+});
+
+test('a ./identifier.json sibling ref from core/ with siblings fails (rule 2)', (t) => {
+  const violations = lintTree(t, {
+    'core/identifier.json': canonical(),
+    'core/other.json': { properties: { id: { $ref: './identifier.json', maxLength: 3 } } },
+  });
+  assert.deepEqual(violations, [{ rule: 'sibling-keywords', file: 'core/other.json', path: '/properties/id' }]);
+});
+
+test('an external-URL enum ref is not treated as an inline copy', (t) => {
+  const copy = inlineCopy();
+  copy.properties.type = { $ref: 'https://example.com/schemas/enums/identifier-types.json' };
+  assert.deepEqual(
+    lintTree(t, { 'core/identifier.json': canonical(), 'x/ext.json': { properties: { id: copy } } }),
+    [],
+  );
+});
+
+test('an allowlist key whose jsonPath contains | is split on the first | only', (t) => {
+  const allowed = new Map([['x/pipe.json|/properties/a|b', 'reason']]);
+  const violations = lintTree(t, { 'core/identifier.json': canonical() }, allowed);
+  assert.deepEqual(violations, [{ rule: 'allowlist', file: 'x/pipe.json', path: '/properties/a|b' }]);
 });
